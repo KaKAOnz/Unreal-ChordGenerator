@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Chord PBR Generator",
+	"Description": "Editor-only placeholder tool for browsing generated images and PBR map previews.",
+	"Category": "Rendering",
+	"CreatedBy": "ChordPBRGenerator",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": true,
+	"EnabledByDefault": false,
+	"Modules": [
+		{
+			"Name": "ChordPBRGenerator",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

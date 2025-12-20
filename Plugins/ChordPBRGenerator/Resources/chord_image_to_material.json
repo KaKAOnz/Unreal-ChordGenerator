@@ -1,0 +1,129 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "chord_v1.safetensors"
+    },
+    "class_type": "ChordLoadModel",
+    "_meta": {
+      "title": "Chord - Load Model"
+    }
+  },
+  "2": {
+    "inputs": {
+      "image": "pasta.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "3": {
+    "inputs": {
+      "chord_model": [
+        "1",
+        0
+      ],
+      "image": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "ChordMaterialEstimation",
+    "_meta": {
+      "title": "Chord - Material Estimation"
+    }
+  },
+  "4": {
+    "inputs": {
+      "filename_prefix": "basecolor",
+      "images": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Base Color"
+    }
+  },
+  "5": {
+    "inputs": {
+      "filename_prefix": "normal",
+      "images": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Normal"
+    }
+  },
+  "6": {
+    "inputs": {
+      "filename_prefix": "roughness",
+      "images": [
+        "3",
+        2
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Roughness"
+    }
+  },
+  "7": {
+    "inputs": {
+      "filename_prefix": "metalness",
+      "images": [
+        "3",
+        3
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Metalness"
+    }
+  },
+  "8": {
+    "inputs": {
+      "normal": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "ChordNormalToHeight",
+    "_meta": {
+      "title": "Chord - Normal to Height"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Height"
+    }
+  },
+  "10": {
+    "inputs": {
+      "target_width": 1024,
+      "target_height": 1024,
+      "padding_color": "white",
+      "interpolation": "lanczos",
+      "image": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "ResizeAndPadImage",
+    "_meta": {
+      "title": "ResizeAndPadImage"
+    }
+  }
+}
