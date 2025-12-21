@@ -1261,7 +1261,18 @@ void SChordPBRTab::StartGenerateImagesAsync()
 		}
 
 		TSharedPtr<FJsonObject> History;
-		if (!Client->WaitForCompletion(Response.PromptId, Response.ClientId, History, ErrorLocal))
+		auto ProgressCallback = [WidgetWeak, RequestId, PromptId = Response.PromptId](float Progress)
+		{
+			if (TSharedPtr<SChordPBRTab> Pinned = WidgetWeak.Pin())
+			{
+				if (Pinned->RequestCounter.GetValue() == RequestId)
+				{
+					Pinned->SetStatusAsync(FString::Printf(TEXT("Generating images... %d%%"), FMath::RoundToInt(Progress * 100.0f)), true);
+				}
+			}
+		};
+
+		if (!Client->WaitForCompletion(Response.PromptId, Response.ClientId, History, ErrorLocal, ProgressCallback))
 		{
 			if (TSharedPtr<SChordPBRTab> Pinned = WidgetWeak.Pin())
 			{
@@ -1467,7 +1478,18 @@ void SChordPBRTab::StartGeneratePBRAsync()
 		}
 
 		TSharedPtr<FJsonObject> History;
-		if (!Client->WaitForCompletion(Response.PromptId, Response.ClientId, History, ErrorLocal))
+		auto ProgressCallback = [WidgetWeak, RequestId, PromptId = Response.PromptId](float Progress)
+		{
+			if (TSharedPtr<SChordPBRTab> Pinned = WidgetWeak.Pin())
+			{
+				if (Pinned->RequestCounter.GetValue() == RequestId)
+				{
+					Pinned->SetStatusAsync(FString::Printf(TEXT("Generating PBR maps... %d%%"), FMath::RoundToInt(Progress * 100.0f)), true);
+				}
+			}
+		};
+
+		if (!Client->WaitForCompletion(Response.PromptId, Response.ClientId, History, ErrorLocal, ProgressCallback))
 		{
 			if (TSharedPtr<SChordPBRTab> Pinned = WidgetWeak.Pin())
 			{

@@ -30,7 +30,7 @@ public:
 
 	bool HealthCheck(FString& OutError) const;
 	bool QueuePrompt(const TSharedPtr<FJsonObject>& PromptObject, FComfyPromptResponse& OutResponse, FString& OutError) const;
-	bool WaitForCompletion(const FString& PromptId, const FString& ClientId, TSharedPtr<FJsonObject>& OutHistory, FString& OutError) const;
+	bool WaitForCompletion(const FString& PromptId, const FString& ClientId, TSharedPtr<FJsonObject>& OutHistory, FString& OutError, TFunction<void(float)> OnProgress = nullptr) const;
 	bool GetHistory(const FString& PromptId, TSharedPtr<FJsonObject>& OutHistory, FString& OutError) const;
 	bool DownloadImage(const FComfyImageReference& Ref, TArray<uint8>& OutData, FString& OutError) const;
 	bool UploadImage(const TArray<uint8>& ImageData, const FString& FileName, FComfyImageReference& OutRef, FString& OutError) const;
@@ -39,7 +39,7 @@ public:
 private:
 	bool ExecuteJsonRequestBlocking(const FString& Url, const FString& Verb, const FString& ContentType, const FString& Body, FHttpResponsePtr& OutResponse, FString& OutError) const;
 	bool ExecuteBinaryRequestBlocking(const FString& Url, const FString& Verb, const TArray<uint8>& Body, FHttpResponsePtr& OutResponse, FString& OutError, const FString& ContentType = TEXT("application/octet-stream")) const;
-	bool WaitOnWebSocket(const FString& PromptId, const FString& ClientId, FString& OutError) const;
+	bool WaitOnWebSocket(const FString& PromptId, const FString& ClientId, FString& OutError, TFunction<void(float)> OnProgress = nullptr) const;
 	bool PollHistoryUntilComplete(const FString& PromptId, TSharedPtr<FJsonObject>& OutHistory, FString& OutError) const;
 	bool ParseImageOutputs(const TSharedPtr<FJsonObject>& History, TArray<FComfyImageReference>& OutImages) const;
 

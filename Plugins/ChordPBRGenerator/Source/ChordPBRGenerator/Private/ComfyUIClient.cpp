@@ -312,7 +312,7 @@ bool FComfyUIClient::QueuePrompt(const TSharedPtr<FJsonObject>& PromptObject, FC
 	return true;
 }
 
-bool FComfyUIClient::WaitOnWebSocket(const FString& PromptId, const FString& ClientId, FString& OutError) const
+bool FComfyUIClient::WaitOnWebSocket(const FString& PromptId, const FString& ClientId, FString& OutError, TFunction<void(float)> OnProgress) const
 {
 	FString WsUrl = BaseUrl.Replace(TEXT("https://"), TEXT("wss://")).Replace(TEXT("http://"), TEXT("ws://"));
 	WsUrl += FString::Printf(TEXT("/ws?clientId=%s"), *ClientId);
@@ -331,67 +331,90 @@ bool FComfyUIClient::WaitOnWebSocket(const FString& PromptId, const FString& Cli
 	TSharedPtr<FWebSocketWaitState, ESPMode::ThreadSafe> State = MakeShared<FWebSocketWaitState, ESPMode::ThreadSafe>(CompletionEventRef);
 	TSharedPtr<IWebSocket> Socket = FWebSocketsModule::Get().CreateWebSocket(WsUrl);
 
-	Socket->OnMessage().AddLambda([State, PromptId](const FString& Message)
+	Socket->OnMessage().AddLambda([State, PromptId, OnProgress](const FString& Message)
 	{
 		TSharedPtr<FJsonObject> Obj;
 		const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Message);
 		if (FJsonSerializer::Deserialize(Reader, Obj) && Obj.IsValid())
 		{
 			FString Type;
-			if (Obj->TryGetStringField(TEXT("type"), Type) && Type == TEXT("execution_error"))
+			if (Obj->TryGetStringField(TEXT("type"), Type))
 			{
-				const TSharedPtr<FJsonObject>* DataObj = nullptr;
-				if (Obj->TryGetObjectField(TEXT("data"), DataObj))
+				if (Type == TEXT("execution_error"))
 				{
-					FString DataPromptId;
-					(*DataObj)->TryGetStringField(TEXT("prompt_id"), DataPromptId);
-					if (DataPromptId == PromptId)
+					const TSharedPtr<FJsonObject>* DataObj = nullptr;
+					if (Obj->TryGetObjectField(TEXT("data"), DataObj))
 					{
-						FString ExceptionMessage;
-						FString NodeType;
-						FString NodeId;
-						(*DataObj)->TryGetStringField(TEXT("exception_message"), ExceptionMessage);
-						(*DataObj)->TryGetStringField(TEXT("node_type"), NodeType);
-						(*DataObj)->TryGetStringField(TEXT("node_id"), NodeId);
+						FString DataPromptId;
+						(*DataObj)->TryGetStringField(TEXT("prompt_id"), DataPromptId);
+						if (DataPromptId == PromptId)
+						{
+							FString ExceptionMessage;
+							FString NodeType;
+							FString NodeId;
+							(*DataObj)->TryGetStringField(TEXT("exception_message"), ExceptionMessage);
+							(*DataObj)->TryGetStringField(TEXT("node_type"), NodeType);
+							(*DataObj)->TryGetStringField(TEXT("node_id"), NodeId);
 
-						FString LocalError;
-						if (!NodeType.IsEmpty() || !NodeId.IsEmpty())
-						{
-							const FString NodeLabel = NodeId.IsEmpty()
-								? NodeType
-								: (NodeType.IsEmpty() ? NodeId : FString::Printf(TEXT("%s %s"), *NodeType, *NodeId));
-							LocalError = ExceptionMessage.IsEmpty()
-								? FString::Printf(TEXT("Execution error (%s)."), *NodeLabel)
-								: FString::Printf(TEXT("Execution error (%s): %s"), *NodeLabel, *ExceptionMessage);
-						}
-						else
-						{
-							LocalError = ExceptionMessage.IsEmpty()
-								? TEXT("Execution error.")
-								: FString::Printf(TEXT("Execution error: %s"), *ExceptionMessage);
-						}
+							FString LocalError;
+							if (!NodeType.IsEmpty() || !NodeId.IsEmpty())
+							{
+								const FString NodeLabel = NodeId.IsEmpty()
+									? NodeType
+									: (NodeType.IsEmpty() ? NodeId : FString::Printf(TEXT("%s %s"), *NodeType, *NodeId));
+								LocalError = ExceptionMessage.IsEmpty()
+									? FString::Printf(TEXT("Execution error (%s)."), *NodeLabel)
+									: FString::Printf(TEXT("Execution error (%s): %s"), *NodeLabel, *ExceptionMessage);
+							}
+							else
+							{
+								LocalError = ExceptionMessage.IsEmpty()
+									? TEXT("Execution error.")
+									: FString::Printf(TEXT("Execution error: %s"), *ExceptionMessage);
+							}
 
-						{
-							FScopeLock Lock(&State->Mutex);
-							State->Error = LocalError;
+							{
+								FScopeLock Lock(&State->Mutex);
+								State->Error = LocalError;
+							}
+							State->bFailed.Store(true);
+							State->CompletionEvent->Trigger();
+							return;
 						}
-						State->bFailed.Store(true);
-						State->CompletionEvent->Trigger();
-						return;
 					}
 				}
-			}
-			else if (Type == TEXT("executing"))
-			{
-				const TSharedPtr<FJsonObject>* DataObj = nullptr;
-				if (Obj->TryGetObjectField(TEXT("data"), DataObj))
+				else if (Type == TEXT("executing"))
 				{
-					FString DataPromptId = (*DataObj)->GetStringField(TEXT("prompt_id"));
-					bool bNodeNull = !(*DataObj)->HasTypedField<EJson::String>(TEXT("node")) || (*DataObj)->GetStringField(TEXT("node")).IsEmpty();
-					if (DataPromptId == PromptId && bNodeNull)
+					const TSharedPtr<FJsonObject>* DataObj = nullptr;
+					if (Obj->TryGetObjectField(TEXT("data"), DataObj))
 					{
-						State->bDone.Store(true);
-						State->CompletionEvent->Trigger();
+						FString DataPromptId = (*DataObj)->GetStringField(TEXT("prompt_id"));
+						bool bNodeNull = !(*DataObj)->HasTypedField<EJson::String>(TEXT("node")) || (*DataObj)->GetStringField(TEXT("node")).IsEmpty();
+						if (DataPromptId == PromptId && bNodeNull)
+						{
+							State->bDone.Store(true);
+							State->CompletionEvent->Trigger();
+						}
+					}
+				}
+				else if (Type == TEXT("progress") && OnProgress)
+				{
+					const TSharedPtr<FJsonObject>* DataObj = nullptr;
+					if (Obj->TryGetObjectField(TEXT("data"), DataObj))
+					{
+						double Value = 0;
+						double Max = 0;
+						if ((*DataObj)->TryGetNumberField(TEXT("value"), Value) && (*DataObj)->TryGetNumberField(TEXT("max"), Max))
+						{
+							if (Max > 0)
+							{
+								float Progress = static_cast<float>(Value / Max);
+								AsyncTask(ENamedThreads::GameThread, [OnProgress, Progress]()
+								{
+									OnProgress(Progress);
+								});
+							}
+						}
 					}
 				}
 			}
@@ -483,12 +506,12 @@ bool FComfyUIClient::PollHistoryUntilComplete(const FString& PromptId, TSharedPt
 	return false;
 }
 
-bool FComfyUIClient::WaitForCompletion(const FString& PromptId, const FString& ClientId, TSharedPtr<FJsonObject>& OutHistory, FString& OutError) const
+bool FComfyUIClient::WaitForCompletion(const FString& PromptId, const FString& ClientId, TSharedPtr<FJsonObject>& OutHistory, FString& OutError, TFunction<void(float)> OnProgress) const
 {
 	bool bSocketOk = false;
 	if (bUseWebSocket)
 	{
-		bSocketOk = WaitOnWebSocket(PromptId, ClientId, OutError);
+		bSocketOk = WaitOnWebSocket(PromptId, ClientId, OutError, OnProgress);
 		if (!bSocketOk && OutError.StartsWith(TEXT("Execution error")))
 		{
 			return false;
