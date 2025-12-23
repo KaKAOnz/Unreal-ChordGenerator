@@ -1,6 +1,7 @@
 // Copyright ChordPBRGenerator
 
 #include "SChordPBRTab.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #include "ChordPBRBackend.h"
 #include "ChordPBRSettings.h"
@@ -143,7 +144,9 @@ TSharedRef<SWidget> SChordPBRTab::BuildChat()
 		.AutoHeight()
 		[
 			SNew(SWrapBox)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 7
 			.UseAllottedWidth(true)
+#endif
 			.InnerSlotPadding(FVector2D(6.0f, 2.0f))
 			+ SWrapBox::Slot()
 			[
@@ -190,7 +193,9 @@ TSharedRef<SWidget> SChordPBRTab::BuildChat()
 			.Padding(0.0f, 8.0f)
 			[
 				SNew(SWrapBox)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 7
 				.UseAllottedWidth(true)
+#endif
 				.InnerSlotPadding(FVector2D(8.0f, 2.0f))
 				+ SWrapBox::Slot()
 				[
@@ -237,7 +242,9 @@ TSharedRef<SWidget> SChordPBRTab::BuildGallery()
 			.AutoHeight()
 			[
 				SNew(SWrapBox)
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 7
 				.UseAllottedWidth(true)
+#endif
 				.InnerSlotPadding(FVector2D(8.0f, 2.0f))
 				+ SWrapBox::Slot()
 				[
