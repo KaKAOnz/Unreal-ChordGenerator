@@ -1,4 +1,4 @@
-// Copyright ChordPBRGenerator
+// Copyright 2025 KaKAOnz. All Rights Reserved.
 
 #include "SChordPBRTab.h"
 #include "Runtime/Launch/Resources/Version.h"
