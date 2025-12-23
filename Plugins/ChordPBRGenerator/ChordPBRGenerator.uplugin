@@ -18,7 +18,10 @@
 		{
 			"Name": "ChordPBRGenerator",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
 		}
 	]
 }
