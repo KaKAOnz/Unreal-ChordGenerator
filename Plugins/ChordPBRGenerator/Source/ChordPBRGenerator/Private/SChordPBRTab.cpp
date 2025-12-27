@@ -144,7 +144,7 @@ TSharedRef<SWidget> SChordPBRTab::BuildChat()
 		.AutoHeight()
 		[
 			SNew(SWrapBox)
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 7
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 5
 			.UseAllottedWidth(true)
 #endif
 			.InnerSlotPadding(FVector2D(6.0f, 2.0f))
@@ -193,7 +193,7 @@ TSharedRef<SWidget> SChordPBRTab::BuildChat()
 			.Padding(0.0f, 8.0f)
 			[
 				SNew(SWrapBox)
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 7
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 5
 				.UseAllottedWidth(true)
 #endif
 				.InnerSlotPadding(FVector2D(8.0f, 2.0f))
@@ -242,7 +242,7 @@ TSharedRef<SWidget> SChordPBRTab::BuildGallery()
 			.AutoHeight()
 			[
 				SNew(SWrapBox)
-#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 7
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 5
 				.UseAllottedWidth(true)
 #endif
 				.InnerSlotPadding(FVector2D(8.0f, 2.0f))
@@ -1991,7 +1991,11 @@ FString SChordPBRTab::SanitizeAssetName(const FString& InName, int32 MaxLen) con
 	}
 	if (Result.Len() > MaxLen)
 	{
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 5
+		Result.LeftInline(MaxLen, EAllowShrinking::No);
+#else
 		Result.LeftInline(MaxLen, false);
+#endif
 	}
 	if (Result.IsEmpty())
 	{

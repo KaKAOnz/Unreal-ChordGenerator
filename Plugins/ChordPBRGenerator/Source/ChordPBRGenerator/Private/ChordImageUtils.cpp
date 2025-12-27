@@ -2,9 +2,11 @@
 
 #include "ChordImageUtils.h"
 
+#include "Runtime/Launch/Resources/Version.h"
 #include "ImageUtils.h"
 #include "IImageWrapper.h"
 #include "IImageWrapperModule.h"
+#include "Misc/FileHelper.h"
 #include "Modules/ModuleManager.h"
 
 namespace
@@ -91,7 +93,16 @@ bool FChordImageUtils::EncodeTextureToPng(UTexture2D* Texture, TArray<uint8>& Ou
 	FMemory::Memcpy(SrcData.GetData(), Data, SrcData.Num() * sizeof(FColor));
 	Mip.BulkData.Unlock();
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 5
+	// UE 5.5+ requires TArray64 for output and uses PNGCompressImageArray
+	TArray64<uint8> TempPngData;
+	FImageUtils::PNGCompressImageArray(Width, Height, SrcData, TempPngData);
+	OutPngData.Empty(TempPngData.Num());
+	OutPngData.Append(TempPngData.GetData(), TempPngData.Num());
+#else
+	// UE 5.4 and earlier uses CompressImageArray with regular TArray
 	FImageUtils::CompressImageArray(Width, Height, SrcData, OutPngData);
+#endif
 	if (OutPngData.Num() == 0)
 	{
 		OutError = TEXT("PNG compression failed.");
